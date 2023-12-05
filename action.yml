@@ -18,10 +18,13 @@ runs:
       run: |
         echo "Starting docket-fix-socket-perm A"
     - shell: bash
+      env:
+        SOCKET_PATH: ${{ inputs.socket-path }}
+        WORKAROUND_GROUP: ${{ inputs.workaround-group }}
       run: |
         echo "Starting docket-fix-socket-perm B"
-        SOCK_OWNER_GID=$(stat -c %g ${{ inputs.socket-path }})
-        echo "${{ inputs.socket-path }} is owned by gid=$SOCK_OWNER_GID"
+        SOCK_OWNER_GID=$(stat -c %g $SOCKET_PATH)
+        echo "$SOCKET_PATH is owned by gid=$SOCK_OWNER_GID"
 
         RUNNING_AS_USER=$(whoami)
         echo "running as user: $RUNNING_AS_USER"
@@ -43,10 +46,10 @@ runs:
             exit 0
         fi
 
-        echo "Group for gid=$SOCK_OWNER_GID does not exist, creating workaround group: ${{ input.workaround-group }}"
-        $SUDO_PREFIX groupadd -g $SOCK_OWNER_GID ${{ input.workaround-group }}
+        echo "Group for gid=$SOCK_OWNER_GID does not exist, creating workaround group: $WORKAROUND_GROUP"
+        $SUDO_PREFIX groupadd -g $SOCK_OWNER_GID $WORKAROUND_GROUP
         echo "Group for gid=$SOCK_OWNER_GID created"
 
-        echo "Adding user to workaround group: ${{ input.workaround-group }}"
-        $SUDO_PREFIX usermod -aG ${{ input.workaround-group }} $RUNNING_AS_USER
+        echo "Adding user to workaround group: $WORKAROUND_GROUP"
+        $SUDO_PREFIX usermod -aG $WORKAROUND_GROUP $RUNNING_AS_USER
         echo "Added user to workaround group"
