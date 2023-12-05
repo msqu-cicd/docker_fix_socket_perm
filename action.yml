@@ -15,7 +15,13 @@ runs:
     using: "composite"
     steps:
         -   shell: bash
+            run: echo "::debug:: Starting docket-fix-socket-perm A"
+        -   shell: bash
+            run: echo "Starting docket-fix-socket-perm B"
+        -   shell: bash
             run: |
+                echo "Starting docket-fix-socket-perm C"
+                echo "::debug:: Starting docket-fix-socket-perm D"
                 SOCK_OWNER_GID=$(stat -c %g ${{ inputs.socket-path }})
                 echo "::debug:: ${{ inputs.socket-path }} is owned by gid=$SOCK_OWNER_GID"
 
