@@ -1,0 +1,44 @@
+name: 'docker-fix-socket-perm'
+description: 'fix docker host socket permissions'
+
+inputs:
+    socket-path:
+        required: true
+        description: "location of the docker socket"
+        default: '/var/run/docker.sock'
+    workaround-group:
+        required: true
+        description: "name of the workaround group to be created (if necessary)"
+        default: 'hostdocker'
+
+runs:
+    using: "composite"
+    steps:
+        -   shell: bash
+            run: |
+                SOCK_OWNER_GID=$(stat -c %g ${{ inputs.socket-path }})
+                echo "${{ inputs.socket-path }} is owned by gid=$SOCK_OWNER_GID"
+
+                RUNNING_AS_USER=$(whoami)
+                echo "${{ running as user: $RUNNING_AS_USER }}"
+
+                SUDO_PREFIX=""
+                if [[ "$RUNNING_AS_USER" != "root" ]]; then
+                    echo "current user is not sudo, assuming sudo is required"
+                    SUDO_PREFIX="sudo"
+                fi
+
+                if getent group $SOCK_OWNER_GID | grep -q "$RUNNING_AS_USER"; then
+                    echo "User is already a member of $SOCK_OWNER_GID"
+                    exit 0
+                fi
+
+                if grep -q -E ":$SOCK_OWNER_GID:" /etc/group; then
+                    echo "Group for gid=$SOCK_OWNER_GID already exists, adding user to it"
+                    $SUDO_PREFIX usermod -aG $(getent group $SOCK_OWNER_GID | cut -d: -f1) $RUNNING_AS_USER
+                    exit 0
+                fi
+
+                echo "Group for gid=$SOCK_OWNER_GID does not exist, creating workaround group: ${{ input.workaround-group }}
+                $SUDO_PREFIX groupadd -g $SOCK_OWNER_GID ${{ input.workaround-group }} \
+                $SUDO_PREFIX usermod -aG ${{ input.workaround-group }} $RUNNING_AS_USER
