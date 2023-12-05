@@ -16,13 +16,12 @@ runs:
   steps:
     - shell: bash
       run: |
-        echo "Starting docket-fix-socket-perm A"
+        echo "Starting docker-fix-socket-perm ..."
     - shell: bash
       env:
         SOCKET_PATH: ${{ inputs.socket-path }}
         WORKAROUND_GROUP: ${{ inputs.workaround-group }}
       run: |
-        echo "Starting docket-fix-socket-perm B"
         SOCK_OWNER_GID=$(stat -c %g $SOCKET_PATH)
         echo "$SOCKET_PATH is owned by gid=$SOCK_OWNER_GID"
 
